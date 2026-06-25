@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刺繍見積もり計算ツール</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #2b6cb0;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            border-radius: 4px;
+        }
+        .result h3 {
+            margin: 0 0 10px 0;
+            color: #2b6cb0;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            border-top: 1px solid #cbd5e0;
+            padding-top: 8px;
+            margin-top: 8px;
+            color: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>刺繍見積もり計算</h2>
+    
+    <div class="form-group">
+        <label for="punching">型代（パンチング代） [円]</label>
+        <input type="number" id="punching" value="5000">
+    </div>
+    
+    <div class="form-group">
+        <label for="stitches">針数（ステッチ数） [針]</label>
+        <input type="number" id="stitches" value="3000">
+    </div>
+    
+    <div class="form-group">
+        <label for="ratePerStitch">1000針あたりの単価 [円]</label>
+        <input type="number" id="ratePerStitch" value="100">
+    </div>
+    
+    <div class="form-group">
+        <label for="quantity">注文数量 [枚/個]</label>
+        <input type="number" id="quantity" value="10">
+    </div>
+    
+    <div class="form-group">
+        <label for="bodyCost">ボディ（持ち込み・ベース素材）単価 [円]</label>
+        <input type="number" id="bodyCost" value="1000">
+    </div>
+    
+    <button onclick="calculateEstimation()">見積もりを計算する</button>
+
+    <div class="result" id="resultBox" style="display:none;">
+        <h3>計算結果</h3>
+        <div class="result-item"><span>型代（初回のみ）：</span><span id="resPunching">0 円</span></div>
+        <div class="result-item"><span>1枚あたりの刺繍代：</span><span id="resEmbroideryPerUnit">0 円</span></div>
+        <div class="result-item"><span>刺繍代 合計：</span><span id="resEmbroideryTotal">0 円</span></div>
+        <div class="result-item"><span>ボディ代 合計：</span><span id="resBodyTotal">0 円</span></div>
+        <div class="result-item total"><span>総合計（税込）：</span><span id="resGrandTotal">0 円</span></div>
+        <div class="result-item" style="font-size: 13px; color: #718096; margin-top: 10px;">
+            <span>1枚あたりの単価（型代含む）：</span><span id="resPerUnit">0 円</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateEstimation() {
+    // 入力値の取得
+    const punching = parseFloat(document.getElementById('punching').value) || 0;
+    const stitches = parseFloat(document.getElementById('stitches').value) || 0;
+    const ratePerStitch = parseFloat(document.getElementById('ratePerStitch').value) || 0;
+    const quantity = parseInt(document.getElementById('quantity').value) || 0;
+    const bodyCost = parseFloat(document.getElementById('bodyCost').value) || 0;
+
+    if (quantity <= 0) {
+        alert("数量は1以上にしてください。");
+        return;
+    }
+
+    // 計算
+    // 1枚あたりの刺繍代 = (針数 / 1000) * 1000針単価
+    const embroideryPerUnit = (stitches / 1000) * ratePerStitch;
+    const embroideryTotal = embroideryPerUnit * quantity;
+    const bodyTotal = bodyCost * quantity;
+    
+    // 総合計 = 型代 + 刺繍代合計 + ボディ代合計 (今回は簡易的に10%の消費税をプラス)
+    const subTotal = punching + embroideryTotal + bodyTotal;
+    const grandTotal = Math.floor(subTotal * 1.1); // 税込み（端数切り捨て）
+    
+    const perUnitTotal = Math.floor(grandTotal / quantity);
+
+    // 画面に反映
+    document.getElementById('resPunching').innerText = punching.toLocaleString() + " 円";
+    document.getElementById('resEmbroideryPerUnit').innerText = embroideryPerUnit.toLocaleString() + " 円";
+    document.getElementById('resEmbroideryTotal').innerText = embroideryTotal.toLocaleString() + " 円";
+    document.getElementById('resBodyTotal').innerText = bodyTotal.toLocaleString() + " 円";
+    document.getElementById('resGrandTotal').innerText = grandTotal.toLocaleString() + " 円";
+    document.getElementById('resPerUnit').innerText = perUnitTotal.toLocaleString() + " 円";
+
+    // 結果ボックスを表示
+    document.getElementById('resultBox').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
+
+
